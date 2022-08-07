@@ -1,0 +1,103 @@
+package com.lu.calculate.common
+
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.lu.calculate.models.DataModel
+
+
+@Composable
+fun NumPad() {
+    val dataModel: DataModel = viewModel()
+    // 最外层容器
+    Column(modifier = Modifier
+        .background(MaterialTheme.colors.primary)
+        .fillMaxHeight(), verticalArrangement = Arrangement.Bottom) {
+
+        Column(verticalArrangement = Arrangement.Bottom, modifier = Modifier
+            .background(Color.White.copy(alpha = .2f))
+            .wrapContentHeight()
+        ) {
+            NumberBoard(modifier = Modifier) {
+                dataModel.visible.value = false
+                // 清空
+                if (it == "C") {
+                    dataModel.operate.value = ""
+                    dataModel.expr.value = ""
+                    return@NumberBoard
+                }
+
+                // 退格一位
+                if (it == "<") {
+                    dataModel.expr.value =
+                        dataModel.expr.value.substring(dataModel.expr.value.length - 2)
+                    return@NumberBoard
+                }
+
+                if (it == "＋" || it == "－" || it == "×" || it == "÷" || it == "%") {
+                    dataModel.operate.value = it
+                }
+
+                if (it != "＝") {
+                    dataModel.expr.value += it
+                    return@NumberBoard
+                }
+
+                val split = dataModel.expr.value.split(dataModel.operate.value.toString())
+                if (split.size != 2) {
+                    return@NumberBoard
+                }
+                val left = split[0].toDouble()
+                val right = split[1].toDouble()
+                val result = when (dataModel.operate.value) {
+                    "＋" -> left + right
+                    "－" -> left - right
+                    "×" -> left * right
+                    "÷" -> left / right
+                    "%" -> left % right
+                    else -> {
+                        0.0f
+                    }
+                }
+                dataModel.preExpr.value = dataModel.expr.value
+                dataModel.expr.value = result.toString()
+                dataModel.visible.value = true
+            }
+        }
+    }
+
+}
+
+
+// 底部操作按钮
+@Composable
+fun NumberBoard(modifier: Modifier, onClick: (btn: String) -> Unit) {
+
+    Column(modifier = modifier, verticalArrangement = Arrangement.Bottom) {
+        // 按钮标题
+        val buttons = ArrayList<List<String>>()
+        buttons.add(listOf("C", "<", "%", "÷"))
+        buttons.add(listOf("7", "8", "9", "×"))
+        buttons.add(listOf("4", "5", "6", "－"))
+        buttons.add(listOf("1", "2", "3", "＋"))
+        buttons.add(listOf("0", ".", "＝"))
+
+        for (btn in buttons) {
+            Row {
+                for (item in btn) {
+                    MimicryButton(title = item,
+                        modifier = Modifier
+                            .weight(if (item == "0") 2.0f else 1f)
+                            .padding(horizontal = 5.dp, vertical = 8.dp), onClick = onClick)
+                }
+            }
+        }
+    }
+}
